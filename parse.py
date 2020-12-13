@@ -68,24 +68,63 @@ def search_title(text):
         'Чувства:',
         'Эффекты логова',
     )
-    result = False
     for title in TITLES:
         result = re.findall(title+'(.*)', text)
         if result:
             return title + '::: ' + result[0] + '\r\n'
+
+    # Undifined пишем в description
     return 'Undifined....' + text + '\r\n'
+
+
+def parse_stats(params):
+    STATS = (
+        ('СИЛ', 'strength'),
+        ('ЛОВ', 'dexterity'),
+        ('ТЕЛ', 'constitution'),
+        ('ИНТ', 'intellegence'),
+        ('МДР', 'wisdom'),
+        ('ХАР', 'chrarisma'),
+    )
+
+    for param in params:
+        stats = param.findAll('div', class_='stat')
+        for stat in stats:
+            two_divs = stat.findAll('div')
+
+            for stat_element in STATS:
+                if stat_element[0] == two_divs[0].text:
+                    key = stat_element[1]
+                    print('Key: '+key)
+
+                    val = re.findall(r'(\d{1,2})\s\(([+-]?\d)\)', two_divs[1].text)
+                    print('Value: ', val)
+                    break
+
+            print(two_divs[1].text+'\r\n')
 
 
 def parse_mob(link):
     html = get_html(dnd_source + link)
     soup = BeautifulSoup(html, 'html.parser')
+
+    size_type_aligment = soup.find('ul', class_='params').find('li', class_='size-type-alignment', recursive=False)
+    if size_type_aligment:
+        sta = size_type_aligment.text.split(', ')
+        print('Size: {}, Type: {}, Alignment: {}'.format(sta[0],sta[1],sta[2]))
+    else:
+        input('Size_Type_Alignment NOT FOUND')
+
     all_parms = soup.find('ul', class_='params').findAll('li', class_='', recursive=False)
     print_lis(all_parms, 'main')
     all_parms = soup.find('ul', class_='params').findAll('li', class_='stats', recursive=False)
-    print_lis(all_parms, 'stats')
+    parse_stats(all_parms)
     all_parms = soup.find('ul', class_='params').findAll('li', class_='subsection', recursive=False)
     print_lis(all_parms, 'subsection')
 
+
+def save_db(key, val, modifier=0):
+    pass
 
 def main():
     get_mobs()
